@@ -1,11 +1,10 @@
 import { object, ref, string } from "yup";
 
 export const LoginSchema = object().shape({
-  name: string().required("Meno je povinné"),
   email: string()
-    .email("This field must be an email")
-    .required("Email is required"),
-  password: string().required("Password is required"),
+    .email("Zadaj platný email")
+    .required("Email je povinný"),
+  password: string().required("Heslo je povinné"),
 });
 
 export const RegisterSchema = object().shape({
