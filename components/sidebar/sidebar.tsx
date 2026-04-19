@@ -20,9 +20,11 @@ import { SlaIcon } from "../icons/sidebar/sla-icon";
 import { ExcelIcon } from "../icons/sidebar/excel-icon";
 import { AiIcon } from "../icons/sidebar/ai-icon";
 import { ServerIcon } from "../icons/sidebar/server-icon";
+import { useTimer } from "../timer/timer-context";
 
 export const SidebarWrapper = () => {
   const pathname = usePathname();
+  const { elapsed, timerState, formatTime, handleStart, handlePause, handleStop } = useTimer();
   const { collapsed, setCollapsed } = useSidebarContext();
 
   return (
@@ -120,6 +122,55 @@ export const SidebarWrapper = () => {
             </SidebarMenu>
 
             <SidebarMenu title="Systém">
+              {/* Timer widget */}
+              <div className="px-2 py-3 rounded-xl bg-default-100/50 flex flex-col items-center gap-2 mb-1">
+                <span className="font-mono text-2xl font-bold text-default-900 tracking-widest">
+                  {formatTime(elapsed)}
+                </span>
+                <div className="flex gap-2">
+                  {timerState === "stopped" && (
+                    <button
+                      onClick={handleStart}
+                      className="px-3 py-1 text-xs rounded-lg bg-[#7DC8E8] text-white font-semibold hover:bg-[#5bb8dc] transition-colors"
+                    >
+                      ▶ Štart
+                    </button>
+                  )}
+                  {timerState === "running" && (
+                    <>
+                      <button
+                        onClick={handlePause}
+                        className="px-3 py-1 text-xs rounded-lg bg-yellow-400 text-white font-semibold hover:bg-yellow-500 transition-colors"
+                      >
+                        ⏸ Pauza
+                      </button>
+                      <button
+                        onClick={handleStop}
+                        className="px-3 py-1 text-xs rounded-lg bg-red-400 text-white font-semibold hover:bg-red-500 transition-colors"
+                      >
+                        ■ Stop
+                      </button>
+                    </>
+                  )}
+                  {timerState === "paused" && (
+                    <>
+                      <button
+                        onClick={handleStart}
+                        className="px-3 py-1 text-xs rounded-lg bg-[#7DC8E8] text-white font-semibold hover:bg-[#5bb8dc] transition-colors"
+                      >
+                        ▶ Pokrač.
+                      </button>
+                      <button
+                        onClick={handleStop}
+                        className="px-3 py-1 text-xs rounded-lg bg-red-400 text-white font-semibold hover:bg-red-500 transition-colors"
+                      >
+                        ■ Stop
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
               <SidebarItem
                 title="Nastavenia"
                 icon={<SettingsIcon />}

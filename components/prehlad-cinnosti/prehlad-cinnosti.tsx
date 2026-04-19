@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getNormohodiny, MESIACE } from "@/lib/pracovne-dni";
+import { useTimer } from "@/components/timer/timer-context";
 
 interface Zaznam {
   rowIndex: number;
@@ -36,39 +37,13 @@ export const PrehladCinnosti = () => {
   const [search, setSearch] = useState("");
   const [searchSkody, setSearchSkody] = useState("");
 
-  // Timer
-  const [timerState, setTimerState] = useState<"stopped" | "running" | "paused">("stopped");
-  const [elapsed, setElapsed] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { elapsed, timerState, formatTime, handleStop, resetElapsed, showSaveModal, setShowSaveModal } = useTimer();
 
-  // Modal
-  const [showModal, setShowModal] = useState(false);
+  const showModal = showSaveModal;
+  const setShowModal = setShowSaveModal;
   const [modalCislo, setModalCislo] = useState("");
   const [modalPopis, setModalPopis] = useState("");
   const [modalSaving, setModalSaving] = useState(false);
-
-  const formatTime = (s: number) => {
-    const h = Math.floor(s / 3600).toString().padStart(2, "0");
-    const m = Math.floor((s % 3600) / 60).toString().padStart(2, "0");
-    const sec = (s % 60).toString().padStart(2, "0");
-    return `${h}:${m}:${sec}`;
-  };
-
-  const handleStart = () => {
-    setTimerState("running");
-    intervalRef.current = setInterval(() => setElapsed((p) => p + 1), 1000);
-  };
-
-  const handlePause = () => {
-    setTimerState("paused");
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  };
-
-  const handleStop = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setTimerState("stopped");
-    setShowModal(true);
-  };
 
   const handleModalSave = async () => {
     setModalSaving(true);
@@ -93,7 +68,7 @@ export const PrehladCinnosti = () => {
 
     setModalSaving(false);
     setShowModal(false);
-    setElapsed(0);
+    resetElapsed();
     setModalCislo("");
     setModalPopis("");
     nacitajData();
@@ -101,14 +76,10 @@ export const PrehladCinnosti = () => {
 
   const handleModalCancel = () => {
     setShowModal(false);
-    setElapsed(0);
+    resetElapsed();
     setModalCislo("");
     setModalPopis("");
   };
-
-  useEffect(() => {
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, []);
 
   const nacitajData = () => {
     setLoading(true);
@@ -241,27 +212,6 @@ export const PrehladCinnosti = () => {
             ))}
           </select>
         </div>
-      </div>
-
-      {/* Timer */}
-      <div className="flex items-center gap-4 mb-6 p-4 border border-default-200 rounded-2xl bg-background">
-        <span className="font-mono text-3xl font-bold text-default-900 w-32">{formatTime(elapsed)}</span>
-        <button
-          onClick={timerState === "running" ? handlePause : handleStart}
-          className={`px-5 py-2 rounded-xl font-semibold text-sm text-white transition-colors ${
-            timerState === "running" ? "bg-orange-400 hover:bg-orange-500" : "bg-[#7DC8E8] hover:bg-[#5bb5d9]"
-          }`}
-        >
-          {timerState === "running" ? "⏸ Pauza" : timerState === "paused" ? "▶ Pokračovať" : "▶ Štart"}
-        </button>
-        {timerState !== "stopped" && (
-          <button
-            onClick={handleStop}
-            className="px-5 py-2 rounded-xl font-semibold text-sm text-white bg-red-500 hover:bg-red-600 transition-colors"
-          >
-            ⏹ Stop
-          </button>
-        )}
       </div>
 
       {/* Modal */}
