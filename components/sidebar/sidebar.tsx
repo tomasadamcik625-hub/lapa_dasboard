@@ -40,10 +40,16 @@ export const SidebarWrapper = () => {
 
             <SidebarMenu title="Pracovné sekcie">
               <SidebarItem
-                title="Prehľad činností"
-                icon={<HomeIcon />}
-                isActive={pathname === "/prehlad-cinnosti"}
-                href="/prehlad-cinnosti"
+                title="Expertné správy"
+                icon={<ReportsIcon />}
+                isActive={pathname === "/expertne-spravy"}
+                href="/expertne-spravy"
+              />
+              <SidebarItem
+                title="Kalendár"
+                icon={<CalendarIcon />}
+                isActive={pathname === "/kalendar"}
+                href="/kalendar"
               />
               <SidebarItem
                 title="Nákladové listy"
@@ -52,22 +58,16 @@ export const SidebarWrapper = () => {
                 href="/nakladove-listy"
               />
               <SidebarItem
-                title="Expertné správy"
-                icon={<ReportsIcon />}
-                isActive={pathname === "/expertne-spravy"}
-                href="/expertne-spravy"
+                title="Prehľad činností"
+                icon={<HomeIcon />}
+                isActive={pathname === "/prehlad-cinnosti"}
+                href="/prehlad-cinnosti"
               />
               <SidebarItem
                 title="Zákazky"
                 icon={<OrdersIcon />}
                 isActive={pathname === "/zakazky"}
                 href="/zakazky"
-              />
-              <SidebarItem
-                title="Kalendár"
-                icon={<CalendarIcon />}
-                isActive={pathname === "/kalendar"}
-                href="/kalendar"
               />
             </SidebarMenu>
 
