@@ -7,13 +7,19 @@ import { SidebarMenu } from "./sidebar-menu";
 import { useSidebarContext } from "../layout/layout-context";
 import { usePathname } from "next/navigation";
 
-// Ikony — použijeme existujúce alebo jednoduché SVG
 import { HomeIcon } from "../icons/sidebar/home-icon";
 import { ReportsIcon } from "../icons/sidebar/reports-icon";
 import { BalanceIcon } from "../icons/sidebar/balance-icon";
 import { SettingsIcon } from "../icons/sidebar/settings-icon";
 import { CalendarIcon } from "../icons/sidebar/calendar-icon";
 import { OrdersIcon } from "../icons/sidebar/orders-icon";
+import { PhotoIcon } from "../icons/sidebar/photo-icon";
+import { ConferenceIcon } from "../icons/sidebar/conference-icon";
+import { NotesIcon } from "../icons/sidebar/notes-icon";
+import { SlaIcon } from "../icons/sidebar/sla-icon";
+import { ExcelIcon } from "../icons/sidebar/excel-icon";
+import { AiIcon } from "../icons/sidebar/ai-icon";
+import { ServerIcon } from "../icons/sidebar/server-icon";
 
 export const SidebarWrapper = () => {
   const pathname = usePathname();
@@ -40,16 +46,40 @@ export const SidebarWrapper = () => {
 
             <SidebarMenu title="Pracovné sekcie">
               <SidebarItem
+                title="AI asistenti"
+                icon={<AiIcon />}
+                isActive={pathname === "/ai-asistenti"}
+                href="/ai-asistenti"
+              />
+              <SidebarItem
+                title="Excel výpočty"
+                icon={<ExcelIcon />}
+                isActive={pathname === "/excel-vypocty"}
+                href="/excel-vypocty"
+              />
+              <SidebarItem
                 title="Expertné správy"
                 icon={<ReportsIcon />}
                 isActive={pathname === "/expertne-spravy"}
                 href="/expertne-spravy"
               />
               <SidebarItem
+                title="Fotodokumentácia"
+                icon={<PhotoIcon />}
+                isActive={pathname === "/fotodokumentacia"}
+                href="/fotodokumentacia"
+              />
+              <SidebarItem
                 title="Kalendár"
                 icon={<CalendarIcon />}
                 isActive={pathname === "/kalendar"}
                 href="/kalendar"
+              />
+              <SidebarItem
+                title="Konferencie"
+                icon={<ConferenceIcon />}
+                isActive={pathname === "/konferencie"}
+                href="/konferencie"
               />
               <SidebarItem
                 title="Nákladové listy"
@@ -64,10 +94,28 @@ export const SidebarWrapper = () => {
                 href="/prehlad-cinnosti"
               />
               <SidebarItem
+                title="Server"
+                icon={<ServerIcon />}
+                isActive={pathname === "/server"}
+                href="/server"
+              />
+              <SidebarItem
+                title="SLA"
+                icon={<SlaIcon />}
+                isActive={pathname === "/sla"}
+                href="/sla"
+              />
+              <SidebarItem
                 title="Zákazky"
                 icon={<OrdersIcon />}
                 isActive={pathname === "/zakazky"}
                 href="/zakazky"
+              />
+              <SidebarItem
+                title="Zápis z KM"
+                icon={<NotesIcon />}
+                isActive={pathname === "/zapis-z-km"}
+                href="/zapis-z-km"
               />
             </SidebarMenu>
 
