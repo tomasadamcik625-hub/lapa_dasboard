@@ -37,49 +37,7 @@ export const PrehladCinnosti = () => {
   const [search, setSearch] = useState("");
   const [searchSkody, setSearchSkody] = useState("");
 
-  const { elapsed, timerState, formatTime, handleStop, resetElapsed, showSaveModal, setShowSaveModal } = useTimer();
-
-  const showModal = showSaveModal;
-  const setShowModal = setShowSaveModal;
-  const [modalCislo, setModalCislo] = useState("");
-  const [modalPopis, setModalPopis] = useState("");
-  const [modalSaving, setModalSaving] = useState(false);
-
-  const handleModalSave = async () => {
-    setModalSaving(true);
-    const dnes = new Date();
-    const datum = `${String(dnes.getDate()).padStart(2, "0")}.${String(dnes.getMonth() + 1).padStart(2, "0")}.${dnes.getFullYear()}`;
-    const hodiny = Math.round((elapsed / 3600) * 100) / 100;
-    const meno = data.find((z) => z.meno)?.meno ?? "Adamčík";
-
-    await fetch("/api/prehlad-cinnosti", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cisloSkody: modalCislo,
-        datum,
-        meno,
-        popis: modalPopis,
-        hodiny,
-        rok: String(dnes.getFullYear()),
-        stavSkody: "O",
-      }),
-    });
-
-    setModalSaving(false);
-    setShowModal(false);
-    resetElapsed();
-    setModalCislo("");
-    setModalPopis("");
-    nacitajData();
-  };
-
-  const handleModalCancel = () => {
-    setShowModal(false);
-    resetElapsed();
-    setModalCislo("");
-    setModalPopis("");
-  };
+  const { timerState } = useTimer();
 
   const nacitajData = () => {
     setLoading(true);
@@ -213,53 +171,6 @@ export const PrehladCinnosti = () => {
           </select>
         </div>
       </div>
-
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-background border border-default-200 rounded-2xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-bold mb-1">Uložiť záznam</h3>
-            <p className="text-default-500 text-sm mb-4">Odpracovaný čas: <span className="font-mono font-semibold text-default-900">{formatTime(elapsed)}</span></p>
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="text-xs text-default-500 font-medium mb-1 block">Číslo škodovej udalosti</label>
-                <input
-                  type="text"
-                  value={modalCislo}
-                  onChange={(e) => setModalCislo(e.target.value)}
-                  placeholder="napr. 2025110396"
-                  className="w-full border border-default-300 rounded-xl px-3 py-2 text-sm bg-background text-default-900 focus:outline-none focus:border-[#7DC8E8]"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-default-500 font-medium mb-1 block">Popis činnosti</label>
-                <textarea
-                  value={modalPopis}
-                  onChange={(e) => setModalPopis(e.target.value)}
-                  placeholder="Popis vykonanej práce..."
-                  rows={3}
-                  className="w-full border border-default-300 rounded-xl px-3 py-2 text-sm bg-background text-default-900 focus:outline-none focus:border-[#7DC8E8] resize-none"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-5 justify-end">
-              <button
-                onClick={handleModalCancel}
-                className="px-4 py-2 rounded-xl text-sm font-semibold bg-default-100 text-default-600 hover:bg-default-200"
-              >
-                Zrušiť
-              </button>
-              <button
-                onClick={handleModalSave}
-                disabled={modalSaving || !modalCislo.trim()}
-                className="px-4 py-2 rounded-xl text-sm font-semibold bg-[#7DC8E8] text-white hover:bg-[#5bb5d9] disabled:opacity-50"
-              >
-                {modalSaving ? "Ukladám..." : "Uložiť"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Sekcia 1 — Fond hodín */}
       <div className="mb-6">

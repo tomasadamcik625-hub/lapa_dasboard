@@ -6,6 +6,7 @@ import { NavbarWrapper } from "../navbar/navbar";
 import { SidebarWrapper } from "../sidebar/sidebar";
 import { SidebarContext } from "./layout-context";
 import { TimerProvider } from "../timer/timer-context";
+import { TimerSaveModal } from "../timer/timer-save-modal";
 
 interface Props {
   children: React.ReactNode;
@@ -30,6 +31,7 @@ export const Layout = ({ children }: Props) => {
           <SidebarWrapper />
           <NavbarWrapper>{children}</NavbarWrapper>
         </section>
+        <TimerSaveModal />
       </SidebarContext.Provider>
     </TimerProvider>
   );
