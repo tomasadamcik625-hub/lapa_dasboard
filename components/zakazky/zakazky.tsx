@@ -137,26 +137,19 @@ export const Zakazky = () => {
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-default-400 font-semibold pointer-events-none">
-              Riešiteľ:
-            </span>
-            <input
-              type="text"
-              value={filterRiesitel}
-              onChange={(e) => setFilterRiesitel(e.target.value)}
-              placeholder="meno..."
-              className="border border-default-300 rounded-xl pl-16 pr-3 py-2 text-sm bg-background text-default-900 focus:outline-none focus:border-[#7DC8E8] w-44"
-            />
-            {filterRiesitel && (
-              <button
-                onClick={() => setFilterRiesitel("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-default-400 hover:text-default-700 text-base leading-none"
-              >
-                ×
-              </button>
-            )}
-          </div>
+          <select
+            value={filterRiesitel}
+            onChange={(e) => setFilterRiesitel(e.target.value)}
+            className="border border-default-300 rounded-xl px-3 py-2 text-sm bg-background text-default-900 focus:outline-none focus:border-[#7DC8E8]"
+          >
+            <option value="">— Riešiteľ —</option>
+            {riesitelColIndex !== -1 &&
+              [...new Set(rows.map((r) => (r[riesitelColIndex] || "").trim()).filter(Boolean))]
+                .sort()
+                .map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+          </select>
           <input
             type="text"
             value={search}
