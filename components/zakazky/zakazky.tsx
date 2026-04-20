@@ -34,15 +34,15 @@ export const Zakazky = () => {
   const riesitelColIndex = headers.findIndex((h) => h.trim().toUpperCase() === "RIEŠITEĽ");
 
   const filtrovane = (() => {
-    let result = search.trim()
-      ? rows.filter((row) =>
-          row.some((cell) => cell.toLowerCase().includes(search.trim().toLowerCase()))
-        )
+    // Krok 1: filter podľa Riešiteľa z CELEJ tabuľky
+    let result = filterRiesitel
+      ? rows.filter((row) => (row[riesitelColIndex] || "") === filterRiesitel)
       : rows.filter((row) => (row[0] || "").startsWith(currentYear));
 
-    if (filterRiesitel.trim() && riesitelColIndex !== -1) {
+    // Krok 2: search filtruje iba z výsledku kroku 1
+    if (search.trim()) {
       result = result.filter((row) =>
-        (row[riesitelColIndex] || "").toLowerCase().includes(filterRiesitel.trim().toLowerCase())
+        row.some((cell) => cell.toLowerCase().includes(search.trim().toLowerCase()))
       );
     }
     return result;
