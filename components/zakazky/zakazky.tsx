@@ -12,6 +12,7 @@ export const Zakazky = () => {
   const [colCount, setColCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterRiesitel, setFilterRiesitel] = useState("");
   const [selectedRow, setSelectedRow] = useState<SelectedRow | null>(null);
   const [editData, setEditData] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -30,11 +31,22 @@ export const Zakazky = () => {
   }, []);
 
   const currentYear = new Date().getFullYear().toString();
-  const filtrovane = search.trim()
-    ? rows.filter((row) =>
-        row.some((cell) => cell.toLowerCase().includes(search.trim().toLowerCase()))
-      )
-    : rows.filter((row) => (row[0] || "").startsWith(currentYear));
+  const riesitelColIndex = headers.findIndex((h) => h.trim().toUpperCase() === "RIEŠITEĽ");
+
+  const filtrovane = (() => {
+    let result = search.trim()
+      ? rows.filter((row) =>
+          row.some((cell) => cell.toLowerCase().includes(search.trim().toLowerCase()))
+        )
+      : rows.filter((row) => (row[0] || "").startsWith(currentYear));
+
+    if (filterRiesitel.trim() && riesitelColIndex !== -1) {
+      result = result.filter((row) =>
+        (row[riesitelColIndex] || "").toLowerCase().includes(filterRiesitel.trim().toLowerCase())
+      );
+    }
+    return result;
+  })();
 
   const openModal = (row: string[], arrayIndex: number) => {
     const values = Array.from({ length: colCount }, (_, i) => row[i] || "");
@@ -124,13 +136,35 @@ export const Zakazky = () => {
             + Nová škoda
           </button>
         </div>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Hľadať v celej tabuľke..."
-          className="border border-default-300 rounded-xl px-3 py-2 text-sm bg-background text-default-900 focus:outline-none focus:border-[#7DC8E8] w-72"
-        />
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-default-400 font-semibold pointer-events-none">
+              Riešiteľ:
+            </span>
+            <input
+              type="text"
+              value={filterRiesitel}
+              onChange={(e) => setFilterRiesitel(e.target.value)}
+              placeholder="meno..."
+              className="border border-default-300 rounded-xl pl-16 pr-3 py-2 text-sm bg-background text-default-900 focus:outline-none focus:border-[#7DC8E8] w-44"
+            />
+            {filterRiesitel && (
+              <button
+                onClick={() => setFilterRiesitel("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-default-400 hover:text-default-700 text-base leading-none"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Hľadať v celej tabuľke..."
+            className="border border-default-300 rounded-xl px-3 py-2 text-sm bg-background text-default-900 focus:outline-none focus:border-[#7DC8E8] w-64"
+          />
+        </div>
       </div>
 
       <div className="border border-default-200 rounded-2xl overflow-hidden bg-background">
