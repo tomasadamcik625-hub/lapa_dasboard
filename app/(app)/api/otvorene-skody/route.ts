@@ -38,6 +38,12 @@ export async function GET() {
     // Agreguj všetky aktivity Adamčíka podľa čísla škody
     const aktivityMap = new Map<string, { hodiny: number; datumPosledny: string }>();
 
+    const parseDateVal = (d: string): number => {
+      const p = d.split(".");
+      if (p.length < 3) return 0;
+      return Number(p[2]) * 10000 + Number(p[1]) * 100 + Number(p[0]);
+    };
+
     for (const row of aktivityRows) {
       const cislo = (row[0] || "").trim();
       if (!cislo || cislo.toUpperCase() === "X" || cislo.toUpperCase() === "D") continue;
@@ -50,7 +56,10 @@ export async function GET() {
       } else {
         const e = aktivityMap.get(cislo)!;
         e.hodiny += hodiny;
-        e.datumPosledny = datum;
+        // Zachovaj vždy najnovší dátum, nie posledný fyzický riadok
+        if (parseDateVal(datum) > parseDateVal(e.datumPosledny)) {
+          e.datumPosledny = datum;
+        }
       }
     }
 
