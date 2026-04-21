@@ -38,17 +38,25 @@ export async function GET() {
     // Agreguj všetky aktivity Adamčíka podľa čísla škody
     const aktivityMap = new Map<string, { hodiny: number; datumPosledny: string }>();
 
+    const normalizeCislo = (s: string) => s.trim().replace(/\s+/g, "").toLowerCase();
+
+    // Podporuje formáty: DD.MM.YYYY, DD/MM/YYYY, YYYY-MM-DD
     const parseDateVal = (d: string): number => {
-      const p = d.split(".");
-      if (p.length < 3) return 0;
-      return Number(p[2]) * 10000 + Number(p[1]) * 100 + Number(p[0]);
+      if (!d) return 0;
+      const dot = d.split(".");
+      if (dot.length >= 3) return Number(dot[2]) * 10000 + Number(dot[1]) * 100 + Number(dot[0]);
+      const slash = d.split("/");
+      if (slash.length >= 3) return Number(slash[2]) * 10000 + Number(slash[1]) * 100 + Number(slash[0]);
+      const iso = d.split("-");
+      if (iso.length >= 3) return Number(iso[0]) * 10000 + Number(iso[1]) * 100 + Number(iso[2]);
+      return 0;
     };
 
     for (const row of aktivityRows) {
-      const cislo = (row[0] || "").trim();
-      if (!cislo || cislo.toUpperCase() === "X" || cislo.toUpperCase() === "D") continue;
+      const cislo = normalizeCislo(row[0] || "");
+      if (!cislo || cislo === "x" || cislo === "d") continue;
 
-      const hodiny = parseFloat(row[4]) || 0;
+      const hodiny = parseFloat((row[4] || "").replace(",", ".")) || 0;
       const datum = row[1] || "";
 
       if (!aktivityMap.has(cislo)) {
@@ -56,18 +64,16 @@ export async function GET() {
       } else {
         const e = aktivityMap.get(cislo)!;
         e.hodiny += hodiny;
-        // Zachovaj vždy najnovší dátum, nie posledný fyzický riadok
         if (parseDateVal(datum) > parseDateVal(e.datumPosledny)) {
           e.datumPosledny = datum;
         }
       }
     }
 
-    // Zdroj pravdy = register, stĺpec AM = "O" → otvorená škoda
-    // Aktivita z denníka je voliteľné obohatenie (ak existuje)
     const result = registerRows
       .map((row) => {
-        const cislo = (row[0] || "").trim();
+        const cisloRaw = (row[0] || "").trim();
+        const cislo = normalizeCislo(cisloRaw);
         const poisteny = row[3] || "";
         const poskodeny = row[4] || "";
         const meno = row[8] || "";
@@ -75,7 +81,7 @@ export async function GET() {
         const aktivita = aktivityMap.get(cislo);
 
         return {
-          cislo,
+          cislo: cisloRaw,
           poisteny,
           poskodeny,
           meno,
@@ -84,7 +90,8 @@ export async function GET() {
           stavRegister,
         };
       })
-      .filter((r) => r.cislo && r.stavRegister === "O");
+      .filter((r) => r.cislo && r.stavRegister === "O")
+      .map(({ stavRegister: _, ...rest }) => rest);
 
     return NextResponse.json({ data: result });
   } catch (error) {
