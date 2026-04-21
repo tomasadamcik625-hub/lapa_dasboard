@@ -43,8 +43,9 @@ export async function GET() {
     const aktivityRows = aktivityRes.data.values || [];
 
     // Dynamicky nájdi stĺpec stavu škody (O/U) podľa názvu hlavičky
-    const stavColIndex = registerHeaders.findLastIndex((h) =>
-      h.trim().toLowerCase().includes("stav")
+    const stavColIndex = registerHeaders.reduce(
+      (last, h, i) => (h.trim().toLowerCase().includes("stav") ? i : last),
+      -1
     );
     // Fallback na AM = 38 ak hlavička nenájde stĺpec
     const effectiveStavCol = stavColIndex !== -1 ? stavColIndex : 38;
