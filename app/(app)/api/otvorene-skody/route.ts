@@ -20,11 +20,17 @@ export async function GET() {
     const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_REGISTER });
     const registerTab = meta.data.sheets?.[0]?.properties?.title ?? "Sheet1";
 
-    // Načítaj register prípadov (A:AM) — AM = stav škody (O/U)
-    const registerRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEET_REGISTER,
-      range: `${registerTab}!A2:AM`,
-    });
+    // Načítaj hlavičku aj dáta registra
+    const [registerHeaderRes, registerRes] = await Promise.all([
+      sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_REGISTER,
+        range: `${registerTab}!1:1`,
+      }),
+      sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_REGISTER,
+        range: `${registerTab}!A2:AZ`,
+      }),
+    ]);
 
     // Načítaj denník aktivít (A:G)
     const aktivityRes = await sheets.spreadsheets.values.get({
@@ -32,8 +38,16 @@ export async function GET() {
       range: "Tomáš Adamčík!A2:G",
     });
 
+    const registerHeaders: string[] = registerHeaderRes.data.values?.[0] || [];
     const registerRows = registerRes.data.values || [];
     const aktivityRows = aktivityRes.data.values || [];
+
+    // Dynamicky nájdi stĺpec stavu škody (O/U) podľa názvu hlavičky
+    const stavColIndex = registerHeaders.findIndex((h) =>
+      h.trim().toLowerCase().includes("stav")
+    );
+    // Fallback na AM = 38 ak hlavička nenájde stĺpec
+    const effectiveStavCol = stavColIndex !== -1 ? stavColIndex : 38;
 
     // Agreguj všetky aktivity Adamčíka podľa čísla škody
     const aktivityMap = new Map<string, { hodiny: number; datumPosledny: string }>();
@@ -77,7 +91,7 @@ export async function GET() {
         const poisteny = row[3] || "";
         const poskodeny = row[4] || "";
         const meno = row[8] || "";
-        const stavRegister = (row[38] || "").trim().toUpperCase();
+        const stavRegister = (row[effectiveStavCol] || "").trim().toUpperCase();
         const aktivita = aktivityMap.get(cislo);
 
         return {
