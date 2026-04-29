@@ -69,7 +69,6 @@ export const Kalendar = () => {
   const [activeMonth, setActiveMonth] = useState<number>(new Date().getMonth());
   const [userName, setUserName] = useState<string | null>(null);
 
-  // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedName, setSelectedName] = useState("");
   const [eventFrom, setEventFrom] = useState(`${YEAR}-01-01`);
@@ -170,23 +169,49 @@ export const Kalendar = () => {
   }, [dayColumns]);
 
   const visibleCols = monthGroups.find((g) => g.month === activeMonth)?.cols ?? monthGroups[0]?.cols ?? [];
-  const nameColHeader = headers[0] || "Meno";
 
-  // Find user row index
-  const userRowIndex = userName
-    ? rows.findIndex((r) => (r[0] || "").trim().toLowerCase() === userName.trim().toLowerCase())
-    : -1;
+  // Build calendar grid (Mon=0 ... Sun=6)
+  const calendarWeeks = useMemo(() => {
+    if (visibleCols.length === 0) return [];
+    const firstDate = new Date(YEAR, activeMonth, 1);
+    const startDow = (firstDate.getDay() + 6) % 7; // Mon=0, Sun=6
+    const weeks: (DayColumn | null)[][] = [];
+    let week: (DayColumn | null)[] = Array(startDow).fill(null);
+    for (const col of visibleCols) {
+      week.push(col);
+      if (week.length === 7) { weeks.push(week); week = []; }
+    }
+    if (week.length > 0) {
+      while (week.length < 7) week.push(null);
+      weeks.push(week);
+    }
+    return weeks;
+  }, [visibleCols, activeMonth]);
 
-  const openModal = () => {
+  // Events per day: day number → list of {name, value, colorCls}
+  const dayEvents = useMemo(() => {
+    const map: Record<number, { name: string; value: string; colorCls: string }[]> = {};
+    for (const col of visibleCols) {
+      const evs: { name: string; value: string; colorCls: string }[] = [];
+      for (const row of rows) {
+        const val = (row[col.colIndex] || "").trim();
+        if (val && val.toUpperCase() !== "X") {
+          evs.push({ name: row[0] || "", value: val, colorCls: getCellColor(val) });
+        }
+      }
+      map[col.day] = evs;
+    }
+    return map;
+  }, [visibleCols, rows]);
+
+  const openModal = (dateStr?: string) => {
     setSaveError("");
+    if (dateStr) { setEventFrom(dateStr); setEventTo(dateStr); }
     if (!selectedName && rows.length > 0) setSelectedName(rows[0][0] || "");
     setShowModal(true);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setSaveError("");
-  };
+  const closeModal = () => { setShowModal(false); setSaveError(""); };
 
   const handleBackdrop = (e: React.MouseEvent) => {
     if (modalRef.current && !modalRef.current.contains(e.target as Node)) closeModal();
@@ -277,7 +302,7 @@ export const Kalendar = () => {
           </p>
         </div>
         <button
-          onClick={openModal}
+          onClick={() => openModal()}
           className="px-4 py-2 text-sm rounded-xl bg-[#7DC8E8] text-white font-semibold hover:bg-[#5bb8dc] transition-colors"
         >
           + Pridať udalosť
@@ -285,14 +310,13 @@ export const Kalendar = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-5 text-xs">
+      <div className="flex flex-wrap gap-2 mb-5 text-xs">
         {[
           { label: "Dovolenka (D)", cls: "bg-green-100 text-green-800" },
           { label: "PN / Nemoc", cls: "bg-yellow-100 text-yellow-800" },
           { label: "Služobná cesta (S)", cls: "bg-blue-100 text-blue-800" },
           { label: "Náhradné voľno (NV)", cls: "bg-purple-100 text-purple-800" },
           { label: "OČR", cls: "bg-orange-100 text-orange-800" },
-          { label: "Víkend / sviatok (X)", cls: "bg-default-100 text-default-400" },
         ].map((item) => (
           <span key={item.label} className={`px-2 py-1 rounded-lg font-medium ${item.cls}`}>
             {item.label}
@@ -300,91 +324,119 @@ export const Kalendar = () => {
         ))}
       </div>
 
-      {/* Month tabs */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setActiveMonth((m) => Math.max(0, m - 1))}
+          className="px-3 py-1.5 rounded-xl bg-default-100 text-default-600 hover:bg-default-200 transition-colors text-sm font-semibold"
+        >
+          ‹ Predchádzajúci
+        </button>
+        <h2 className="text-xl font-bold text-default-900">
+          {MONTH_NAMES[activeMonth]} {YEAR}
+        </h2>
+        <button
+          onClick={() => setActiveMonth((m) => Math.min(11, m + 1))}
+          className="px-3 py-1.5 rounded-xl bg-default-100 text-default-600 hover:bg-default-200 transition-colors text-sm font-semibold"
+        >
+          Nasledujúci ›
+        </button>
+      </div>
+
+      {/* Quick month tabs */}
+      <div className="flex flex-wrap gap-1.5 mb-5">
         {monthGroups.map(({ month }) => (
           <button
             key={month}
             onClick={() => setActiveMonth(month)}
-            className={`px-4 py-1.5 rounded-xl text-sm font-medium transition-colors ${
+            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
               activeMonth === month
                 ? "bg-[#7DC8E8] text-white"
                 : "bg-default-100 text-default-600 hover:bg-default-200"
             }`}
           >
-            {MONTH_NAMES[month]}
+            {MONTH_NAMES[month].slice(0, 3)}
           </button>
         ))}
       </div>
 
-      {/* Calendar table */}
+      {/* Calendar grid */}
       <div className="border border-default-200 rounded-2xl overflow-hidden bg-background">
-        <div className="overflow-x-auto">
-          <table className="text-xs whitespace-nowrap border-collapse">
-            <thead>
-              <tr className="bg-default-50 border-b border-default-200">
-                <th className="sticky left-0 z-10 bg-default-50 px-4 py-3 font-semibold text-default-500 border-r border-default-200 text-left min-w-[160px]">
-                  {nameColHeader}
-                </th>
-                {visibleCols.map((col) => (
-                  <th
-                    key={col.colIndex}
-                    className={`px-1.5 py-3 font-semibold text-center w-8 min-w-[32px] ${
+        {/* Day headers */}
+        <div className="grid grid-cols-7 border-b border-default-200 bg-default-50">
+          {["Po", "Ut", "St", "Št", "Pi", "So", "Ne"].map((d, i) => (
+            <div
+              key={d}
+              className={`py-2.5 text-center text-xs font-semibold ${
+                i >= 5 ? "text-default-400" : "text-default-600"
+              } ${i < 6 ? "border-r border-default-100" : ""}`}
+            >
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Weeks */}
+        {calendarWeeks.map((week, wi) => (
+          <div key={wi} className={`grid grid-cols-7 ${wi < calendarWeeks.length - 1 ? "border-b border-default-200" : ""}`}>
+            {week.map((col, di) => {
+              if (!col) {
+                return (
+                  <div
+                    key={di}
+                    className={`min-h-[100px] bg-default-50/40 ${di < 6 ? "border-r border-default-100" : ""}`}
+                  />
+                );
+              }
+              const events = dayEvents[col.day] || [];
+              return (
+                <div
+                  key={di}
+                  onClick={() => openModal(toDateStr(YEAR, activeMonth, col.day))}
+                  className={`min-h-[100px] p-1.5 cursor-pointer transition-colors group
+                    ${col.isWeekend ? "bg-default-50/60" : "bg-background"}
+                    ${col.isToday ? "ring-2 ring-inset ring-[#7DC8E8]" : ""}
+                    hover:bg-[#7DC8E8]/5
+                    ${di < 6 ? "border-r border-default-100" : ""}
+                  `}
+                >
+                  {/* Day number */}
+                  <div className="flex justify-end mb-1">
+                    <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
                       col.isToday
                         ? "bg-[#7DC8E8] text-white"
                         : col.isWeekend
                         ? "text-default-400"
-                        : "text-default-600"
-                    }`}
-                  >
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={visibleCols.length + 1} className="text-center py-10 text-default-400">
-                    Žiadne záznamy
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row, ri) => (
-                  <tr
-                    key={ri}
-                    className={`border-b border-default-100 transition-colors ${
-                      ri === userRowIndex
-                        ? "bg-[#7DC8E8]/5 hover:bg-[#7DC8E8]/10"
-                        : ri % 2 === 0 ? "hover:bg-default-50/60" : "bg-default-50/30 hover:bg-default-50/60"
-                    }`}
-                  >
-                    <td className={`sticky left-0 z-10 bg-inherit px-4 py-2 font-medium border-r border-default-100 min-w-[160px] ${
-                      ri === userRowIndex ? "text-[#5bb8dc]" : "text-default-800"
+                        : "text-default-700"
                     }`}>
-                      {row[0] || ""}
-                      {ri === userRowIndex && <span className="ml-1 text-[10px] opacity-60">(ty)</span>}
-                    </td>
-                    {visibleCols.map((col) => {
-                      const val = (row[col.colIndex] || "").trim();
-                      const colorCls = getCellColor(val);
-                      return (
-                        <td
-                          key={col.colIndex}
-                          className={`text-center w-8 min-w-[32px] py-2 font-medium ${
-                            col.isToday ? "ring-1 ring-inset ring-[#7DC8E8]" : ""
-                          } ${col.isWeekend && !val ? "bg-default-50/50" : ""} ${colorCls}`}
-                        >
-                          {val}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                      {col.day}
+                    </span>
+                  </div>
+
+                  {/* Events */}
+                  <div className="space-y-0.5">
+                    {events.slice(0, 3).map((ev, ei) => (
+                      <div
+                        key={ei}
+                        className={`text-[10px] leading-tight px-1.5 py-0.5 rounded-md truncate font-medium ${ev.colorCls}`}
+                        title={`${ev.name}: ${ev.value}`}
+                      >
+                        <span className="font-bold">{ev.value}</span>
+                        {" "}
+                        <span className="opacity-80">{ev.name.split(" ").pop()}</span>
+                      </div>
+                    ))}
+                    {events.length > 3 && (
+                      <div className="text-[10px] text-default-400 px-1">
+                        +{events.length - 3} ďalší
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Event modal */}
@@ -403,8 +455,6 @@ export const Kalendar = () => {
             </div>
 
             <div className="px-6 py-5 space-y-5">
-
-              {/* Name selector */}
               <div>
                 <label className="text-xs font-semibold text-default-500 uppercase tracking-wide block mb-1">Zamestnanec</label>
                 <select
@@ -419,7 +469,6 @@ export const Kalendar = () => {
                 </select>
               </div>
 
-              {/* Date range */}
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-default-500 uppercase tracking-wide block mb-1">Od</label>
@@ -445,7 +494,6 @@ export const Kalendar = () => {
                 </div>
               </div>
 
-              {/* Event type */}
               <div>
                 <p className="text-xs font-semibold text-default-500 uppercase tracking-wide mb-2">Typ udalosti</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -459,16 +507,13 @@ export const Kalendar = () => {
                           : `${opt.cls} opacity-70 hover:opacity-100`
                       }`}
                     >
-                      {opt.value !== "__custom__" && (
-                        <span className="font-bold mr-1">{opt.value}</span>
-                      )}
+                      {opt.value !== "__custom__" && <span className="font-bold mr-1">{opt.value}</span>}
                       {opt.label}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Custom text input */}
               {eventType === "__custom__" && (
                 <div>
                   <label className="text-xs font-semibold text-default-500 uppercase tracking-wide block mb-1">Vlastný text</label>
